@@ -8,7 +8,7 @@
     "sinon-chai": "^2.8.0"
   },
   "scripts": {
-    "test": "npm run lint && mocha javascript-tasks-9/test/*",
+    "test": "npm run lint && mocha test/*",
     "lint": "jscs ."
   }
 }

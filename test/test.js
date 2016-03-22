@@ -10,6 +10,23 @@ chai.use(require('sinon-chai'));
 var expect = chai.expect;
 var assert = chai.assert;
 
+function generateFunction (param, timeout, data) {
+    timeout = timeout || Math.floor(Math.random() * 1000);
+    if (param === 'error') {
+        return sinon.spy((next) => {
+            setTimeout(() => next('error'), timeout);
+        });
+    }
+    if (data) {
+        return sinon.spy((data, next) => {
+            setTimeout(() => next(null, param), timeout);
+        });
+    }
+    return sinon.spy((next) => {
+        setTimeout(() => next(null, param), timeout);
+    });
+}
+
 describe('Тестирование библиотеки \'Котофайлы\'', () => {
     describe('Тестирование функции \'serial\'', () => {
 
@@ -22,9 +39,7 @@ describe('Тестирование библиотеки \'Котофайлы\'',
         });
 
         it('Должен вызывать единственную функцию без аргументов', (done) => {
-            var func = sinon.spy((next) => {
-                setTimeout(() => next(null, 1), 100);
-            });
+            var func = generateFunction(1);
             var callback = sinon.spy(() => {
                 expect(func).to.have.been.calledOnce;
                 expect(callback).to.have.been.calledOnce;
@@ -36,14 +51,10 @@ describe('Тестирование библиотеки \'Котофайлы\'',
         });
 
         it('Должен объединять две функции в цепочку', (done) => {
-            var func1 = sinon.spy((next) => {
-                setTimeout(() => next(null, 1), 100);
-            });
-            var func2 = sinon.spy((data, next) => {
-                setTimeout(() => next(null, 2), 80);
-            });
+            var func1 = generateFunction(1);
+            var func2 = generateFunction(2, 80, true);
             var callback = sinon.spy(() => {
-                expect(func1).to.have.been.called;
+                expect(func1).to.have.been.calledOnce;
                 expect(func2).to.have.been.calledOnce;
                 expect(callback).to.have.been.calledOnce;
                 expect(callback).to.have.been.calledWith(null, 2);
@@ -55,12 +66,8 @@ describe('Тестирование библиотеки \'Котофайлы\'',
         });
 
         it('Не выполняется вторая функция, если первая вызвала ошибку', (done) => {
-            var func1 = sinon.spy((next) => {
-                setTimeout(() => next('error'), 100);
-            });
-            var func2 = sinon.spy((data, next) => {
-                setTimeout(() => next(null, 2), 80);
-            });
+            var func1 = generateFunction('error');
+            var func2 = generateFunction(2, 80, true);
             var callback = sinon.spy(() => {
                 expect(func1).to.be.calledOnce;
                 expect(func2).to.not.be.called;
@@ -85,9 +92,7 @@ describe('Тестирование библиотеки \'Котофайлы\'',
         });
 
         it('Должен вызывать единственную функцию', (done) => {
-            var func = sinon.spy((next) => {
-                setTimeout(() => next(null, 1), 100);
-            });
+            var func = generateFunction(1);
             var callback = sinon.spy(() => {
                 expect(func).to.be.calledOnce;
                 expect(callback).to.be.calledOnce;
@@ -99,100 +104,64 @@ describe('Тестирование библиотеки \'Котофайлы\'',
         });
 
         it('Должен вызывать две функции', (done) => {
-            var func1 = sinon.spy((next) => {
-                setTimeout(() => next(null, 1), 300);
-            });
-            var func2 = sinon.spy((next) => {
-                setTimeout(() => next(null, 2), 100);
-            });
+            var funcArray = [generateFunction(1), generateFunction(2)];
             var callback = sinon.spy(() => {
-                expect(func1).to.be.calledOnce;
-                expect(func2).to.be.calledOnce;
+                funcArray.forEach((f) => expect(f).to.be.calledOnce);
                 expect(callback).to.be.calledOnce;
                 expect(callback).to.be.calledWith(null, [1, 2]);
                 done();
             });
 
-            test.parallel([func1, func2], callback);
+            test.parallel(funcArray, callback);
         });
 
         it('Должен вызывать все три функции', (done) => {
-            var func1 = sinon.spy((next) => {
-                setTimeout(() => next(null, 1), 400);
-            });
-            var func2 = sinon.spy((next) => {
-                setTimeout(() => next(null, 2), 100);
-            });
-            var func3 = sinon.spy((next) => {
-                setTimeout(() => next(null, 3), 200);
-            });
+            var funcArray = [];
+            for (var i = 1; i <= 3; i++) {
+                funcArray.push(generateFunction(i));
+            }
             var callback = sinon.spy(() => {
-                expect(func1).to.be.calledOnce;
-                expect(func2).to.be.calledOnce;
-                expect(func3).to.be.calledOnce;
+                funcArray.forEach((f) => expect(f).to.be.calledOnce);
                 expect(callback).to.be.calledOnce;
                 expect(callback).to.be.calledWith(null, [1, 2, 3]);
                 done();
             });
 
-            test.parallel([func1, func2, func3], callback);
+            test.parallel(funcArray, callback);
         });
 
         it('Должен параллельно вызывать все три функции, если limit > 3', (done) => {
-            var func1 = sinon.spy((next) => {
-                setTimeout(() => next(null, 1), 400);
-            });
-            var func2 = sinon.spy((next) => {
-                setTimeout(() => next(null, 2), 100);
-            });
-            var func3 = sinon.spy((next) => {
-                setTimeout(() => next(null, 3), 200);
-            });
+            var funcArray = [];
+            for (var i = 1; i <= 3; i++) {
+                funcArray.push(generateFunction(i));
+            }
             var callback = sinon.spy(() => {
-                expect(func1).to.be.calledOnce;
-                expect(func2).to.be.calledOnce;
-                expect(func3).to.be.calledOnce;
+                funcArray.forEach((f) => expect(f).to.be.calledOnce);
                 expect(callback).to.be.calledOnce;
                 expect(callback).to.be.calledWith(null, [1, 2, 3]);
                 done();
             });
 
-            test.parallel([func1, func2, func3], 5, callback);
+            test.parallel(funcArray, 5, callback);
         });
 
 
         it('Должен вызывать все 5 функций, если limit = 3', (done) => {
-            var func1 = sinon.spy((next) => {
-                setTimeout(() => next(null, 1), 400);
-            });
-            var func2 = sinon.spy((next) => {
-                setTimeout(() => next(null, 2), 100);
-            });
-            var func3 = sinon.spy((next) => {
-                setTimeout(() => next(null, 3), 200);
-            });
-            var func4 = sinon.spy((next) => {
-                setTimeout(() => next(null, 4), 100);
-            });
-            var func5 = sinon.spy((next) => {
-                setTimeout(() => next(null, 5), 50);
-            });
+            var funcArray = [];
+            for (var i = 1; i <= 5; i++) {
+                funcArray.push(generateFunction(i));
+            }
             var callback = sinon.spy(() => {
-                expect(func1).to.be.calledOnce;
-                expect(func2).to.be.calledOnce;
-                expect(func3).to.be.calledOnce;
-                expect(func4).to.be.calledOnce;
-                expect(func5).to.be.calledOnce;
+                funcArray.forEach((f) => expect(f).to.be.calledOnce);
                 expect(callback).to.be.calledOnce;
                 expect(callback).to.be.calledWith(null, [1, 2, 3, 4, 5]);
                 done();
             });
 
-            test.parallel([func1, func2, func3, func4, func5], 3, callback);
+            test.parallel(funcArray, 3, callback);
         });
 
         it('Должен вызывать все три функции по порядку, т.к. задано ограничение в 1', (done) => {
-            var a = Date.now();
             var func1 = sinon.spy((next) => {
                 setTimeout(() => {
                     sinon.assert.notCalled(func2);
@@ -223,51 +192,36 @@ describe('Тестирование библиотеки \'Котофайлы\'',
         });
 
         it('Должен возвращать ошибку, если одна из функций вернула ошибку', (done) => {
-            var func1 = sinon.spy((next) => {
-                setTimeout(() => next(null, 1), 100);
-            });
-            var func2 = sinon.spy((next) => {
-                setTimeout(() => next('error'), 300);
-            });
-            var func3 = sinon.spy((next) => {
-                setTimeout(() => next(null, 3), 100);
-            });
+            var funcArray = [];
+            funcArray.push(generateFunction(1));
+            funcArray.push(generateFunction('error'));
+            funcArray.push(generateFunction(3));
             var callback = sinon.spy(() => {
-                expect(func1).to.be.calledOnce;
-                expect(func2).to.be.calledOnce;
-                expect(func3).to.be.calledOnce;
+                funcArray.forEach((f) => expect(f).to.be.calledOnce);
                 expect(callback).to.be.calledOnce;
                 expect(callback).to.be.calledWith('error', [1, undefined, 3]);
                 done();
             });
 
-            test.parallel([func1, func2, func3], callback);
+            test.parallel(funcArray, callback);
         });
 
         it('Должен вызывать все функции параллельно', (done) => {
             var a = Date.now();
-            var func1 = sinon.spy((next) => {
-                setTimeout(() => next(null, 1), 400);
-            });
-            var func2 = sinon.spy((next) => {
-                setTimeout(() => next(null, 2), 100);
-            });
-            var func3 = sinon.spy((next) => {
-                setTimeout(() => next(null, 3), 200);
-            });
+            var funcArray = [];
+            funcArray.push(generateFunction(1, 400));
+            funcArray.push(generateFunction(2, 100));
+            funcArray.push(generateFunction(3, 200));
             var callback = sinon.spy(() => {
                 var b = Date.now();
-                expect(func1).to.be.calledOnce;
-                expect(func2).to.be.calledOnce;
-                expect(func3).to.be.calledOnce;
+                funcArray.forEach((f) => expect(f).to.be.calledOnce);
                 expect(callback).to.be.calledOnce;
                 expect(callback).to.be.calledWith(null, [1, 2, 3]);
-                // время выполнения функций меньше суммарного
-                assert.isBelow(b - a, 700);
+                assert.isBelow(b - a, 410);
                 done();
             });
 
-            test.parallel([func1, func2, func3], callback);
+            test.parallel(funcArray, callback);
         });
     });
 
@@ -309,7 +263,7 @@ describe('Тестирование библиотеки \'Котофайлы\'',
                 expect(func).to.be.calledThrice;
                 expect(callback).to.be.calledOnce;
                 expect(callback).to.be.calledWith(null, [2, 4, 6]);
-                assert.isBelow(b - a, 300);
+                assert.isBelow(b - a, 110);
                 done();
             });
 
