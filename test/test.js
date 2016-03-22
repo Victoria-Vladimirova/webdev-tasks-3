@@ -10,7 +10,7 @@ chai.use(require('sinon-chai'));
 var expect = chai.expect;
 var assert = chai.assert;
 
-function generateFunction (param, timeout, data) {
+function generateFunction(param, timeout, data) {
     timeout = timeout || Math.floor(Math.random() * 1000);
     if (param === 'error') {
         return sinon.spy((next) => {
