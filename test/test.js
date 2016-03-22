@@ -1,3 +1,5 @@
+'use strict';
+
 var fs = require('fs');
 
 var test = require('../javascript-tasks-9/lib/flow');
@@ -10,15 +12,16 @@ chai.use(require('sinon-chai'));
 var expect = chai.expect;
 var assert = chai.assert;
 
-function generateFunction(param, timeout, data) {
+function generateFunction(param, timeout, expectedData) {
     timeout = timeout || Math.floor(Math.random() * 1000);
     if (param === 'error') {
         return sinon.spy((next) => {
             setTimeout(() => next('error'), timeout);
         });
     }
-    if (data) {
+    if (expectedData !== undefined) {
         return sinon.spy((data, next) => {
+            assert(data === expectedData);
             setTimeout(() => next(null, param), timeout);
         });
     }
@@ -52,7 +55,7 @@ describe('Тестирование библиотеки \'Котофайлы\'',
 
         it('Должен объединять две функции в цепочку', (done) => {
             var func1 = generateFunction(1);
-            var func2 = generateFunction(2, 80, true);
+            var func2 = generateFunction(2, 80, 1);
             var callback = sinon.spy(() => {
                 expect(func1).to.have.been.calledOnce;
                 expect(func2).to.have.been.calledOnce;
@@ -117,7 +120,7 @@ describe('Тестирование библиотеки \'Котофайлы\'',
 
         it('Должен вызывать все три функции', (done) => {
             var funcArray = [];
-            for (var i = 1; i <= 3; i++) {
+            for (let i = 1; i <= 3; i++) {
                 funcArray.push(generateFunction(i));
             }
             var callback = sinon.spy(() => {
@@ -132,7 +135,7 @@ describe('Тестирование библиотеки \'Котофайлы\'',
 
         it('Должен параллельно вызывать все три функции, если limit > 3', (done) => {
             var funcArray = [];
-            for (var i = 1; i <= 3; i++) {
+            for (let i = 1; i <= 3; i++) {
                 funcArray.push(generateFunction(i));
             }
             var callback = sinon.spy(() => {
@@ -148,7 +151,7 @@ describe('Тестирование библиотеки \'Котофайлы\'',
 
         it('Должен вызывать все 5 функций, если limit = 3', (done) => {
             var funcArray = [];
-            for (var i = 1; i <= 5; i++) {
+            for (let i = 1; i <= 5; i++) {
                 funcArray.push(generateFunction(i));
             }
             var callback = sinon.spy(() => {

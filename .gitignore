@@ -1,6 +1,6 @@
 .DS_Store
-.git
 .idea
 node_modules
 npm-debug.log
 coverage
+javascript-tasks-9
